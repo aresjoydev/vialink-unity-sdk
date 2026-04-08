@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>ViaLinkSDK</AssemblyName>
+    <RootNamespace>ViaLink</RootNamespace>
+    <LangVersion>9.0</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>bin/</OutputPath>
+    <!-- 경고 억제: Unity stub의 미사용 이벤트 등 -->
+    <NoWarn>CS0067;CS0649;CS0114;CS0108</NoWarn>
+    <!-- 기본 소스 포함 비활성화 -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <!-- Unity 엔진 stub DLL 참조 (빌드 전용, 런타임에는 Unity 엔진이 대체) -->
+  <ItemGroup>
+    <Reference Include="UnityEngine">
+      <HintPath>stubs/bin/UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- SDK 소스 파일만 명시적으로 포함 (stubs 제외) -->
+  <ItemGroup>
+    <Compile Include="src/**/*.cs" />
+  </ItemGroup>
+</Project>
