@@ -1,6 +1,6 @@
 {
   "name": "com.vialink.sdk",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "displayName": "ViaLink SDK",
   "description": "ViaLink 딥링크 SDK for Unity - 딥링크 라우팅, 디퍼드 딥링킹, 이벤트 추적",
   "unity": "2021.3",
