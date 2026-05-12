@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ViaLink Unity SDK link.xml
+
+  Unity Managed Stripping 으로부터 SDK 가 의존하는 Unity API 들을 보호한다.
+  특히 UnityWebRequest.Result 같은 nested enum 은 stripper 가 unused 로 판단해
+  제거하는 경우가 있어 IL2CPP 빌드 시 "Unresolved type reference" 에러를 유발한다.
+
+  link.xml 은 UPM 패키지의 Runtime/ 폴더에 두면 Unity 가 자동으로 적용한다.
+-->
+<linker>
+  <!-- UnityWebRequest 와 nested types (Result 포함) 보호 -->
+  <assembly fullname="UnityEngine.UnityWebRequestModule">
+    <type fullname="UnityEngine.Networking.UnityWebRequest" preserve="all"/>
+    <type fullname="UnityEngine.Networking.UnityWebRequestAsyncOperation" preserve="all"/>
+    <type fullname="UnityEngine.Networking.UploadHandler" preserve="all"/>
+    <type fullname="UnityEngine.Networking.UploadHandlerRaw" preserve="all"/>
+    <type fullname="UnityEngine.Networking.DownloadHandler" preserve="all"/>
+    <type fullname="UnityEngine.Networking.DownloadHandlerBuffer" preserve="all"/>
+  </assembly>
+
+  <!-- SDK 자체도 reflection / RuntimeInitializeOnLoadMethod 사용을 위해 전체 보호 -->
+  <assembly fullname="ViaLinkSDK" preserve="all"/>
+</linker>
