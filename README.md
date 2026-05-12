@@ -106,22 +106,6 @@ ViaLinkSDK.Instance.PaymentInitiated(new PaymentInitiatedArgs
 | `EventPayload` | 이벤트 페이로드 모델 |
 | `PaymentInitiatedArgs` / `PaymentInitiatedResult` | 결제 추적 입출력 |
 
-## 개발자용 빌드 (DLL 재빌드)
-
-DLL 소스는 `.build/src/` 에 있습니다 (netstandard2.1). 수정 후:
-
-```bash
-# 1) DLL 빌드 (stub UnityEngine 으로 컴파일)
-.build/build-dll.sh
-
-# 2) Unity 6 모듈로 type reference scope 재배선
-.build/relink-dll.sh             # 기본 6000.4.6f1
-.build/relink-dll.sh 6000.4.7f1  # 다른 버전 지정
-```
-
-`build-dll.sh` 만 돌리면 stub `UnityEngine` 어셈블리에 묶여 있어 IL2CPP(Android/iOS) 빌드에서
-`Unresolved type reference` 에러가 납니다 — 반드시 `relink-dll.sh` 까지 같이 돌려야 합니다.
-
 ## 변경 이력
 
 - **3.2.1** — Pull API 4개 추가 (`GetDeepLinkData`/`AwaitDeepLinkData`/`GetDeferredLinkData`/`AwaitDeferredLinkData`), Initialize 이전 도착 딥링크 캐싱(`FlushPendingDeepLinks`), iOS/Android v3.2.x API 표면 정합화
@@ -131,4 +115,3 @@ DLL 소스는 `.build/src/` 에 있습니다 (netstandard2.1). 수정 후:
 ## 문서
 
 - [SDK 가이드](https://docs.vialink.app)
-- [샘플 프로젝트](sample~/README.md)
