@@ -108,6 +108,7 @@ ViaLinkSDK.Instance.PaymentInitiated(new PaymentInitiatedArgs
 
 ## 변경 이력
 
+- **3.2.3** — iOS Universal Link 콜백 fix: Unity 6 의 `UnityScene` (SceneDelegate) 가 `scene:continueUserActivity:` 를 구현하지 않아 Universal Link 가 `Application.deepLinkActivated` 로 전달되지 않던 한계 우회. `Runtime/Plugins/iOS/ViaLinkUniversalLinkBridge.mm` 가 +load 시점에 `UnityScene` 클래스에 메서드 주입(또는 swizzle) → URL 을 SDK 의 `_OnNativeUniversalLink` 핸들러로 전달. cold-start (`willConnectToSession`) + warm/hot start 모두 처리. Custom URL Scheme 처리에는 영향 없음.
 - **3.2.2** — 디퍼드 매칭 fix: `device_info.os` 가 모바일에서 `"Other"` 로 송신되던 버그 수정 (`SystemInfo.operatingSystemFamily` → `Application.platform` 분기). 이제 Android/iOS 네이티브 SDK 와 동일하게 `"Android"`/`"iOS"` 송신 → 서버 fingerprint (IP+OS) 매칭 정상화
 - **3.2.1** — Pull API 4개 추가 (`GetDeepLinkData`/`AwaitDeepLinkData`/`GetDeferredLinkData`/`AwaitDeferredLinkData`), Initialize 이전 도착 딥링크 캐싱(`FlushPendingDeepLinks`), iOS/Android v3.2.x API 표면 정합화
 - **3.0.0** — 디퍼드 콜백 redesign (`OnDeferredDeepLink(data, error)`), Payment.Initiated V1
