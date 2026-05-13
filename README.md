@@ -108,6 +108,14 @@ ViaLinkSDK.Instance.PaymentInitiated(new PaymentInitiatedArgs
 
 ## 변경 이력
 
+- **3.2.6** — iOS Universal Link cold-start hang/watchdog 회피:
+  - 3.2.5 가 `scene:willConnectToSession:options:` 에서 `UnitySetAbsoluteURL` 을 호출했는데, 이 시점은 `initUnityWithScene:` 이전이라 IL2CPP 부팅이 완료되지 않은 상태. Unity API 호출이 초기화를 망쳐 scene-create 가 19.81s 안에 끝나지 않고 watchdog `0x8BADF00D` 로 강제 종료되는 회귀 발생.
+  - 브릿지를 3단 hook 으로 재설계: `willConnectToSession` 은 NSURL 을 static 에 **stash만**, `sceneWillEnterForeground` swizzle 을 새로 추가해 원래 동작(initUnityWithScene)이 끝난 뒤에 `UnitySetAbsoluteURL` + `UnitySendMessage` 로 SDK 에 통지. Unity 자체도 cold-start URL Scheme 처리를 같은 패턴(willConnect 에서 stash → sceneWillEnterForeground 에서 apply)으로 한다.
+- **3.2.5** — iOS Universal Link cold-start 누락 회복:
+  - 3.2.4 에서 cold-start UL 처리 swizzle 을 통째로 제거했더니 UIScene 환경에서 cold-start UL 이 어디에서도 수신되지 않는 회귀가 생김. UIScene + iOS 13+ 에서는 cold-start UL 이 `application:willFinishLaunchingWithOptions:` 의 launchOptions 가 아니라 `scene:willConnectToSession:options:` 의 `connectionOptions.userActivities` 로만 전달되기 때문 (Unity 의 `UnityAppController` 는 launchOptions 경로만 처리).
+  - `scene:willConnectToSession:options:` swizzle 을 복원하되, 이번엔 **`UnitySetAbsoluteURL` 만** 호출 (이전 3.2.3 의 크래시 원인이었던 `UnitySendMessage` 는 IL2CPP 부팅 전이라 호출 금지). SDK 의 `CheckColdStartDeepLink()` 가 Initialize 시점에 `Application.absoluteURL` 을 픽업.
+  - 결과: cold-start UL → absoluteURL 경로 1회, warm/hot UL → `_OnNativeUniversalLink` 경로 1회 — 서로 다른 경로라 중복 호출 없음. crash 도 없음.
+- **3.2.4** — iOS Universal Link 중복/크래시 hotfix: 이전 버전의 `scene:willConnectToSession:options:` swizzle 이 (a) Unity 의 cold-start UL 처리(`UnityAppController.application:willFinishLaunchingWithOptions:` 가 launchOptions 에서 UL 을 꺼내 `UnitySetAbsoluteURL` 호출)와 중복돼 `OnDeepLink` 가 2회 fire 되고, (b) IL2CPP 런타임(`initUnityWithScene`) 부팅 전에 `UnitySendMessage` 가 호출돼 cold-start 크래시를 유발하던 문제 수정. 브릿지는 이제 `scene:continueUserActivity:` (warm/hot start) 만 처리, cold-start 는 Unity 의 willFinishLaunching 경로에 일임. 추가로 SDK 의 `HandleDeepLinkActivated` 에 동일 URL 1초 재진입 가드 추가.
 - **3.2.3** — iOS Universal Link 콜백 fix: Unity 6 의 `UnityScene` (SceneDelegate) 가 `scene:continueUserActivity:` 를 구현하지 않아 Universal Link 가 `Application.deepLinkActivated` 로 전달되지 않던 한계 우회. `Runtime/Plugins/iOS/ViaLinkUniversalLinkBridge.mm` 가 +load 시점에 `UnityScene` 클래스에 메서드 주입(또는 swizzle) → URL 을 SDK 의 `_OnNativeUniversalLink` 핸들러로 전달. cold-start (`willConnectToSession`) + warm/hot start 모두 처리. Custom URL Scheme 처리에는 영향 없음.
 - **3.2.2** — 디퍼드 매칭 fix: `device_info.os` 가 모바일에서 `"Other"` 로 송신되던 버그 수정 (`SystemInfo.operatingSystemFamily` → `Application.platform` 분기). 이제 Android/iOS 네이티브 SDK 와 동일하게 `"Android"`/`"iOS"` 송신 → 서버 fingerprint (IP+OS) 매칭 정상화
 - **3.2.1** — Pull API 4개 추가 (`GetDeepLinkData`/`AwaitDeepLinkData`/`GetDeferredLinkData`/`AwaitDeferredLinkData`), Initialize 이전 도착 딥링크 캐싱(`FlushPendingDeepLinks`), iOS/Android v3.2.x API 표면 정합화
