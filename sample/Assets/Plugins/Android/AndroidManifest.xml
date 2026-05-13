@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ViaLink App Links 매니페스트 (Unity 6 / NativeActivity).
+  Unity 가 PlayerSettings 기반으로 application 의 label/icon/권한 등을 자동 설정하므로
+  여기서는 SDK 가 필요한 INTERNET 권한과 ViaLink App Link intent-filter 만 추가한다.
+  ACCESS_NETWORK_STATE 는 Unity 가 UnityWebRequest 사용 감지 시 자동 주입하므로 명시하지 않는다 (중복 경고 회피).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application>
+        <activity
+            android:name="com.unity3d.player.UnityPlayerActivity"
+            android:exported="true"
+            android:theme="@style/UnityThemeSelector"
+            android:screenOrientation="fullSensor"
+            android:launchMode="singleTask"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+
+            <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
+
+            <!-- ViaLink App Links: https://vialink.app/unity/<shortcode> -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="vialink.app"
+                    android:pathPrefix="/unity/" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
