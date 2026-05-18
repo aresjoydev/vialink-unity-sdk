@@ -20,6 +20,10 @@ https://github.com/aresjoydev/vialink-unity-sdk.git
 
 ## 사용법 — 콜백 방식 (BeforeSceneLoad 권장)
 
+> ⚠️ `ViaLinkSDK` 는 `MonoBehaviour` 싱글턴이며 **lazy-create 하지 않습니다.**
+> `Instance` 는 컴포넌트의 `Awake()` 에서만 세팅되므로, **씬에 `ViaLinkSDK` 컴포넌트가 부착된 GameObject 가 없으면 `Instance == null` 이어서 NullReferenceException 이 발생합니다.**
+> 아래 부트스트랩 예시는 컴포넌트가 없을 때 직접 생성하는 안전한 패턴입니다.
+
 ```csharp
 using UnityEngine;
 using ViaLink;
@@ -29,7 +33,15 @@ public static class ViaLinkBootstrap
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Bootstrap()
     {
-        // ① 콜백 먼저 등록 (Initialize 가 cold-start 딥링크를 즉시 dispatch 할 수 있음)
+        // ① 씬에 ViaLinkSDK 컴포넌트가 없으면 직접 GameObject 생성
+        //    (AddComponent 즉시 Awake() 가 호출되어 Instance 가 세팅됨 + DontDestroyOnLoad)
+        if (ViaLinkSDK.Instance == null)
+        {
+            var go = new GameObject("ViaLinkSDK");
+            go.AddComponent<ViaLinkSDK>();
+        }
+
+        // ② 콜백 먼저 등록 (Initialize 가 cold-start 딥링크를 즉시 dispatch 할 수 있음)
         ViaLinkSDK.Instance.OnDeepLink += data =>
         {
             Debug.Log($"[ViaLink] 딥링크: {data.Path}");
@@ -41,7 +53,7 @@ public static class ViaLinkBootstrap
             Debug.Log($"[ViaLink] 디퍼드 딥링크: {data.Path}");
         };
 
-        // ② 그 다음 Initialize
+        // ③ 그 다음 Initialize
         ViaLinkSDK.Instance.Initialize("YOUR_API_KEY");
     }
 }
@@ -94,6 +106,90 @@ ViaLinkSDK.Instance.PaymentInitiated(new PaymentInitiatedArgs
     Debug.Log($"paymentEventId={result.PaymentEventId}");
 }, err => Debug.LogError(err));
 ```
+
+## 플랫폼 설정 — 딥링크 / 유니버셜 링크 (필수)
+
+ViaLink SDK 가 딥링크를 수신하려면 OS 가 앱을 해당 URL 의 핸들러로 인식해야 합니다. 아래 설정 없이는 `OnDeepLink` 콜백이 호출되지 않습니다 (디퍼드 매칭만 동작).
+
+### Android — `AndroidManifest.xml` intent-filter
+
+`Edit > Project Settings > Player > Android > Publishing Settings` 에서 **Custom Main Manifest** 를 체크하고, 생성된 `Assets/Plugins/Android/AndroidManifest.xml` 의 `UnityPlayerActivity` 에 intent-filter 를 추가합니다.
+
+```xml
+<activity
+    android:name="com.unity3d.player.UnityPlayerActivity"
+    android:exported="true">
+
+    <!-- App Link (https) — 권장 -->
+    <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data
+            android:scheme="https"
+            android:host="vialink.app"
+            android:pathPrefix="/{your-slug}/" /> <!-- ViaLink 대시보드에서 등록한 slug -->
+    </intent-filter>
+
+    <!-- 커스텀 URL Scheme (선택) -->
+    <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="vialink-example" />
+    </intent-filter>
+</activity>
+```
+
+### iOS — Associated Domains + URL Scheme
+
+Unity 빌드 후 Xcode 프로젝트에 추가 설정이 필요합니다. **PostProcessBuild 스크립트로 자동화**하는 것을 권장합니다.
+
+`Assets/Editor/ViaLinkiOSPostProcess.cs`:
+
+```csharp
+#if UNITY_IOS
+using UnityEditor;
+using UnityEditor.Callbacks;
+using UnityEditor.iOS.Xcode;
+using System.IO;
+
+public static class ViaLinkiOSPostProcess
+{
+    [PostProcessBuild(999)]
+    public static void OnPostProcessBuild(BuildTarget target, string path)
+    {
+        if (target != BuildTarget.iOS) return;
+
+        // 1) Associated Domains (Universal Link)
+        string projPath = PBXProject.GetPBXProjectPath(path);
+        var proj = new PBXProject();
+        proj.ReadFromFile(projPath);
+        string mainTarget = proj.GetUnityMainTargetGuid();
+
+        var caps = new ProjectCapabilityManager(
+            projPath, "Unity-iPhone.entitlements", null, mainTarget);
+        caps.AddAssociatedDomains(new[] { "applinks:vialink.app" });
+        caps.WriteToFile();
+
+        // 2) URL Scheme (선택)
+        string plistPath = Path.Combine(path, "Info.plist");
+        var plist = new PlistDocument();
+        plist.ReadFromFile(plistPath);
+
+        var urlTypes = plist.root.CreateArray("CFBundleURLTypes");
+        var urlType  = urlTypes.AddDict();
+        urlType.SetString("CFBundleURLName", "com.example.app");
+        urlType.CreateArray("CFBundleURLSchemes").AddString("vialink-example");
+        plist.WriteToFile(plistPath);
+    }
+}
+#endif
+```
+
+수동으로 설정하려면: Xcode > Target > Signing & Capabilities > `+ Capability` > **Associated Domains** > `applinks:vialink.app` 추가.
+
+> 자세한 내용(Android Gradle 설정, AASA 파일, 디버깅 체크리스트 등)은 [Unity SDK 가이드 §8](https://docs.vialink.app/sdk/unity-sdk-guide) 를 참고하세요.
 
 ## 공개 클래스
 
