@@ -1,6 +1,6 @@
 {
   "name": "com.vialink.sdk",
-  "version": "3.2.8",
+  "version": "3.2.10",
   "displayName": "ViaLink SDK",
   "description": "ViaLink 딥링크 SDK for Unity - 딥링크 라우팅, 디퍼드 딥링킹, 이벤트 추적",
   "unity": "2021.3",
@@ -14,5 +14,12 @@
     "deferred-deeplink",
     "attribution",
     "analytics"
+  ],
+  "samples": [
+    {
+      "displayName": "ViaLink Sample (Android + iOS)",
+      "description": "딥링크 라우팅 · 디퍼드 딥링킹 · 이벤트/결제 추적 통합 샘플 (모바일 전용)",
+      "path": "Samples~/unity_sample"
+    }
   ]
 }
