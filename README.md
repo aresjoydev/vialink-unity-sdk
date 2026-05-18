@@ -113,33 +113,54 @@ ViaLink SDK 가 딥링크를 수신하려면 OS 가 앱을 해당 URL 의 핸들
 
 ### Android — `AndroidManifest.xml` intent-filter
 
-`Edit > Project Settings > Player > Android > Publishing Settings` 에서 **Custom Main Manifest** 를 체크하고, 생성된 `Assets/Plugins/Android/AndroidManifest.xml` 의 `UnityPlayerActivity` 에 intent-filter 를 추가합니다.
+`Edit > Project Settings > Player > Android > Publishing Settings` 에서 **Custom Main Manifest** 를 체크하면 `Assets/Plugins/Android/AndroidManifest.xml` 에 Unity 기본 manifest 가 복사됩니다. **그 안의 `UnityPlayerActivity` 에 ViaLink intent-filter 만 추가하고, 다른 속성(`launchMode`, `configChanges`, `MAIN/LAUNCHER` intent-filter)은 절대 지우지 마세요.**
+
+> ⚠️ `launchMode="singleTask"` 가 빠지면 딥링크 진입 시 OS 가 Activity 새 인스턴스를 만들어 게임 상태가 초기화됩니다.
+> `MAIN/LAUNCHER` intent-filter 가 빠지면 앱 아이콘에서 실행이 안 됩니다.
+
+전체 형태는 다음과 같아야 합니다:
 
 ```xml
-<activity
-    android:name="com.unity3d.player.UnityPlayerActivity"
-    android:exported="true">
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name="com.unity3d.player.UnityPlayerActivity"
+            android:theme="@style/UnityThemeSelector"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density"
+            android:launchMode="singleTask"
+            android:exported="true">
 
-    <!-- App Link (https) — 권장 -->
-    <intent-filter android:autoVerify="true">
-        <action android:name="android.intent.action.VIEW" />
-        <category android:name="android.intent.category.DEFAULT" />
-        <category android:name="android.intent.category.BROWSABLE" />
-        <data
-            android:scheme="https"
-            android:host="vialink.app"
-            android:pathPrefix="/{your-slug}/" /> <!-- ViaLink 대시보드에서 등록한 slug -->
-    </intent-filter>
+            <!-- 앱 아이콘 실행 (절대 지우지 말 것) -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
 
-    <!-- 커스텀 URL Scheme (선택) -->
-    <intent-filter>
-        <action android:name="android.intent.action.VIEW" />
-        <category android:name="android.intent.category.DEFAULT" />
-        <category android:name="android.intent.category.BROWSABLE" />
-        <data android:scheme="vialink-example" />
-    </intent-filter>
-</activity>
+            <!-- ViaLink App Link (https) — 권장 -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="vialink.app"
+                    android:pathPrefix="/{your-slug}/" /> <!-- ViaLink 대시보드에서 등록한 slug -->
+            </intent-filter>
+
+            <!-- ViaLink 커스텀 URL Scheme (선택) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="vialink-example" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
 ```
+
+> 별도로 Android 네이티브 코드(`onCreate`/`onNewIntent`) 를 작성할 필요는 없습니다. Unity 가 OS Intent 를 자동으로 `Application.deepLinkActivated` 이벤트로 변환해 SDK 가 받습니다.
 
 ### iOS — Associated Domains + URL Scheme
 
