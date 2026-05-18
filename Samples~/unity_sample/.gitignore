@@ -15,7 +15,9 @@
 *.app
 *.exe
 android.apk
-android_BackUpThisFolder_ButDontShipItWithYourGame/
+# Unity Android IL2CPP 빌드 시 생성되는 BackUp 폴더 — 빌드 옵션/이름에 따라
+# android_BackUpThisFolder..., android_unity_BackUpThisFolder... 등 prefix 가 다양해서 와일드카드로 처리
+*_BackUpThisFolder_ButDontShipItWithYourGame/
 *_BurstDebugInformation_DoNotShip/
 ios/
 
