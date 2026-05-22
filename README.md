@@ -18,30 +18,26 @@ https://github.com/aresjoydev/vialink-unity-sdk.git
 - .NET Standard 2.1
 - IL2CPP (Android/iOS) 지원
 
-## 사용법 — 콜백 방식 (BeforeSceneLoad 권장)
+## 사용법 — 최소 통합 코드
 
-> ⚠️ `ViaLinkSDK` 는 `MonoBehaviour` 싱글턴이며 **lazy-create 하지 않습니다.**
-> `Instance` 는 컴포넌트의 `Awake()` 에서만 세팅되므로, **씬에 `ViaLinkSDK` 컴포넌트가 부착된 GameObject 가 없으면 `Instance == null` 이어서 NullReferenceException 이 발생합니다.**
-> 아래 부트스트랩 예시는 컴포넌트가 없을 때 직접 생성하는 안전한 패턴입니다.
+> ✨ **v3.2.12+** 부터 `ViaLinkSDK` 인스턴스가 **씬 로드 전 자동으로 생성**됩니다 (`Runtime/ViaLinkBootstrap.cs` — `[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]`).
+> 별도 GameObject 부착이나 씬 설정은 필요 없습니다. 사용자는 **콜백 등록 + `Initialize` 호출**만 추가하면 됩니다.
+
+`Assets/Scripts/ViaLinkInit.cs` (또는 임의 경로) 에 다음 한 파일만 추가하세요:
 
 ```csharp
 using UnityEngine;
 using ViaLink;
 
-public static class ViaLinkBootstrap
+public static class ViaLinkInit
 {
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap()
     {
-        // ① 씬에 ViaLinkSDK 컴포넌트가 없으면 직접 GameObject 생성
-        //    (AddComponent 즉시 Awake() 가 호출되어 Instance 가 세팅됨 + DontDestroyOnLoad)
-        if (ViaLinkSDK.Instance == null)
-        {
-            var go = new GameObject("ViaLinkSDK");
-            go.AddComponent<ViaLinkSDK>();
-        }
+        // 패키지의 자동 Bootstrap 이 BeforeSceneLoad 에서 ViaLinkSDK GameObject 를
+        // 미리 만들어 두므로 AfterSceneLoad 에서 Instance 는 항상 non-null 입니다.
 
-        // ② 콜백 먼저 등록 (Initialize 가 cold-start 딥링크를 즉시 dispatch 할 수 있음)
+        // 콜백 먼저 등록 (Initialize 가 캐싱된 cold-start 딥링크를 dispatch 할 수 있음)
         ViaLinkSDK.Instance.OnDeepLink += data =>
         {
             Debug.Log($"[ViaLink] 딥링크: {data.Path}");
@@ -53,12 +49,12 @@ public static class ViaLinkBootstrap
             Debug.Log($"[ViaLink] 디퍼드 딥링크: {data.Path}");
         };
 
-        // ③ 그 다음 Initialize
+        // Initialize
         ViaLinkSDK.Instance.Initialize("YOUR_API_KEY");
     }
 }
 
-// 이벤트 추적
+// 이벤트 추적 (게임 코드 어디서나)
 ViaLinkSDK.Instance.TrackEvent("purchase", new Dictionary<string, object>
 {
     { "product_id", "123" },
@@ -66,6 +62,16 @@ ViaLinkSDK.Instance.TrackEvent("purchase", new Dictionary<string, object>
     { "currency", "KRW" },
 });
 ```
+
+> ⓘ **Initialize 이전 도착 딥링크 처리**: cold-start 딥링크가 `Initialize()` 호출 전에 OS 에서 전달되더라도 SDK 내부 `_pendingURL` 큐가 캐싱했다가 `Initialize()` 끝에 `FlushPendingDeepLinks()` 가 재처리하므로 데이터 누락이 없습니다 (v3.2.1+).
+
+<details>
+<summary>이전(v3.2.11 이하) 패턴이 궁금하다면</summary>
+
+v3.2.11 이하에서는 `ViaLinkSDK` 가 `MonoBehaviour` 싱글턴이지만 lazy-create 가 없어, 사용자가 `BeforeSceneLoad` 에서 `if (ViaLinkSDK.Instance == null) new GameObject("ViaLinkSDK").AddComponent<ViaLinkSDK>();` 같은 방어 코드를 직접 작성해야 했습니다. v3.2.12 부터는 패키지가 이 부트스트랩을 제공하므로 위 코드를 제거해도 됩니다.
+
+</details>
+
 
 ## 사용법 — Pull API (v3.2.1+)
 
