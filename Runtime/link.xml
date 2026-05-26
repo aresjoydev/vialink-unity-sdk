@@ -21,4 +21,13 @@
 
   <!-- SDK 자체도 reflection / RuntimeInitializeOnLoadMethod 사용을 위해 전체 보호 -->
   <assembly fullname="ViaLinkSDK" preserve="all"/>
+
+  <!--
+    asmdef 로 만들어지는 ViaLink 어셈블리(=Runtime/ViaLink.asmdef)도 보호.
+    ViaLinkBootstrap 은 외부 참조가 0 인 internal static class 라서
+    IL2CPP managed stripping 이 "도달 불가"로 판단해 통째로 제거할 수 있다.
+    그러면 BeforeSceneLoad 에서 ViaLinkSDK GameObject 가 생성되지 않아
+    사용자 코드의 ViaLinkSDK.Instance 가 null 이 된다.
+  -->
+  <assembly fullname="ViaLink" preserve="all"/>
 </linker>
