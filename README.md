@@ -40,6 +40,7 @@ public static class ViaLinkInit
         // 콜백 먼저 등록 (Initialize 가 캐싱된 cold-start 딥링크를 dispatch 할 수 있음)
         ViaLinkSDK.Instance.OnDeepLink += data =>
         {
+            if (data == null) return; // 방어적 null 체크
             Debug.Log($"[ViaLink] 딥링크: {data.Path}");
         };
         ViaLinkSDK.Instance.OnDeferredDeepLink += (data, error) =>
