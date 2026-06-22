@@ -1,9 +1,11 @@
 # ViaLink Unity SDK
 
-ViaLink 딥링크 인프라 서비스를 위한 Unity SDK입니다.
-사전 컴파일된 DLL(`Runtime/Plugins/ViaLinkSDK.dll`, netstandard2.1)로 배포됩니다.
+**English** | [한국어](README.ko.md)
 
-## 설치
+Unity SDK for the ViaLink deep link infrastructure service.
+Distributed as a precompiled DLL (`Runtime/Plugins/ViaLinkSDK.dll`, netstandard2.1).
+
+## Installation
 
 ### Unity Package Manager
 
@@ -12,18 +14,18 @@ Window > Package Manager > + > Add package from git URL:
 https://github.com/aresjoydev/vialink-unity-sdk.git
 ```
 
-## 요구사항
+## Requirements
 
-- Unity 2021.3 이상 (Unity 6 권장 — DLL 은 2026-05 시점 6000.4.6f1 의 module 들에 relink 되어 있음)
+- Unity 2021.3 or later (Unity 6 recommended — the DLL is relinked against the modules of 6000.4.6f1 as of 2026-05)
 - .NET Standard 2.1
-- IL2CPP (Android/iOS) 지원
+- IL2CPP (Android/iOS) support
 
-## 사용법 — 최소 통합 코드
+## Usage — minimal integration code
 
-> ✨ **v3.2.12+** 부터 `ViaLinkSDK` 인스턴스가 **씬 로드 전 자동으로 생성**됩니다 (`Runtime/ViaLinkBootstrap.cs` — `[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]`).
-> 별도 GameObject 부착이나 씬 설정은 필요 없습니다. 사용자는 **콜백 등록 + `Initialize` 호출**만 추가하면 됩니다.
+> ✨ Since **v3.2.12+**, the `ViaLinkSDK` instance is **created automatically before scene load** (`Runtime/ViaLinkBootstrap.cs` — `[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]`).
+> No separate GameObject attachment or scene setup is required. You only need to add **callback registration + an `Initialize` call**.
 
-`Assets/Scripts/ViaLinkInit.cs` (또는 임의 경로) 에 다음 한 파일만 추가하세요:
+Add just this one file at `Assets/Scripts/ViaLinkInit.cs` (or any path):
 
 ```csharp
 using UnityEngine;
@@ -34,20 +36,20 @@ public static class ViaLinkInit
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap()
     {
-        // 패키지의 자동 Bootstrap 이 BeforeSceneLoad 에서 ViaLinkSDK GameObject 를
-        // 미리 만들어 두므로 AfterSceneLoad 에서 Instance 는 항상 non-null 입니다.
+        // The package's automatic Bootstrap creates the ViaLinkSDK GameObject ahead of time
+        // at BeforeSceneLoad, so Instance is always non-null at AfterSceneLoad.
 
-        // 콜백 먼저 등록 (Initialize 가 캐싱된 cold-start 딥링크를 dispatch 할 수 있음)
+        // Register callbacks first (Initialize may dispatch a cached cold-start deep link)
         ViaLinkSDK.Instance.OnDeepLink += data =>
         {
-            if (data == null) return; // 방어적 null 체크
-            Debug.Log($"[ViaLink] 딥링크: {data.Path}");
+            if (data == null) return; // defensive null check
+            Debug.Log($"[ViaLink] deep link: {data.Path}");
         };
         ViaLinkSDK.Instance.OnDeferredDeepLink += (data, error) =>
         {
-            if (error != null) { /* 매칭 실패 */ return; }
+            if (error != null) { /* match failed */ return; }
             if (data == null)  { /* organic install */ return; }
-            Debug.Log($"[ViaLink] 디퍼드 딥링크: {data.Path}");
+            Debug.Log($"[ViaLink] deferred deep link: {data.Path}");
         };
 
         // Initialize
@@ -55,7 +57,7 @@ public static class ViaLinkInit
     }
 }
 
-// 이벤트 추적 (게임 코드 어디서나)
+// Event tracking (anywhere in your game code)
 ViaLinkSDK.Instance.TrackEvent("purchase", new Dictionary<string, object>
 {
     { "product_id", "123" },
@@ -64,42 +66,42 @@ ViaLinkSDK.Instance.TrackEvent("purchase", new Dictionary<string, object>
 });
 ```
 
-> ⓘ **Initialize 이전 도착 딥링크 처리**: cold-start 딥링크가 `Initialize()` 호출 전에 OS 에서 전달되더라도 SDK 내부 `_pendingURL` 큐가 캐싱했다가 `Initialize()` 끝에 `FlushPendingDeepLinks()` 가 재처리하므로 데이터 누락이 없습니다 (v3.2.1+).
+> ⓘ **Handling deep links that arrive before Initialize**: even if a cold-start deep link is delivered by the OS before `Initialize()` is called, the SDK's internal `_pendingURL` queue caches it, and `FlushPendingDeepLinks()` reprocesses it at the end of `Initialize()`, so no data is lost (v3.2.1+).
 
 <details>
-<summary>이전(v3.2.11 이하) 패턴이 궁금하다면</summary>
+<summary>If you're curious about the older (v3.2.11 and below) pattern</summary>
 
-v3.2.11 이하에서는 `ViaLinkSDK` 가 `MonoBehaviour` 싱글턴이지만 lazy-create 가 없어, 사용자가 `BeforeSceneLoad` 에서 `if (ViaLinkSDK.Instance == null) new GameObject("ViaLinkSDK").AddComponent<ViaLinkSDK>();` 같은 방어 코드를 직접 작성해야 했습니다. v3.2.12 부터는 패키지가 이 부트스트랩을 제공하므로 위 코드를 제거해도 됩니다.
+In v3.2.11 and below, `ViaLinkSDK` is a `MonoBehaviour` singleton but has no lazy-create, so you had to write defensive code yourself at `BeforeSceneLoad`, such as `if (ViaLinkSDK.Instance == null) new GameObject("ViaLinkSDK").AddComponent<ViaLinkSDK>();`. Since v3.2.12 the package provides this bootstrap, so you can remove that code.
 
 </details>
 
 
-## 사용법 — Pull API (v3.2.1+)
+## Usage — Pull API (v3.2.1+)
 
-콜백 등록을 놓쳤거나 특정 시점에 직접 조회하고 싶을 때:
+When you missed callback registration or want to query directly at a specific point:
 
 ```csharp
-// 즉시 반환 — 캐시된 마지막 딥링크
+// Returns immediately — the last cached deep link
 DeepLinkData last = ViaLinkSDK.Instance.GetDeepLinkData();
 
-// 다음 딥링크 도착 대기 (3초 타임아웃, null 이면 미수신)
+// Wait for the next deep link to arrive (3-second timeout, null if none received)
 ViaLinkSDK.Instance.AwaitDeepLinkData(data =>
 {
-    Debug.Log(data == null ? "타임아웃" : $"딥링크: {data.Path}");
+    Debug.Log(data == null ? "timeout" : $"deep link: {data.Path}");
 }, timeoutSeconds: 3f);
 
-// 디퍼드 매칭 결과 즉시 조회
+// Query the deferred match result immediately
 DeepLinkData deferred = ViaLinkSDK.Instance.GetDeferredLinkData();
 
-// 디퍼드 매칭 결과 대기 (이미 결정됐으면 즉시 호출)
+// Wait for the deferred match result (called immediately if already decided)
 ViaLinkSDK.Instance.AwaitDeferredLinkData((data, error) =>
 {
-    if (error != null) { /* 매칭 실패 */ return; }
+    if (error != null) { /* match failed */ return; }
     if (data == null)  { /* organic */ return; }
 });
 ```
 
-## 결제 추적 (V1)
+## Payment tracking (V1)
 
 ```csharp
 ViaLinkSDK.Instance.PaymentInitiated(new PaymentInitiatedArgs
@@ -114,18 +116,18 @@ ViaLinkSDK.Instance.PaymentInitiated(new PaymentInitiatedArgs
 }, err => Debug.LogError(err));
 ```
 
-## 플랫폼 설정 — 딥링크 / 유니버셜 링크 (필수)
+## Platform setup — deep links / universal links (required)
 
-ViaLink SDK 가 딥링크를 수신하려면 OS 가 앱을 해당 URL 의 핸들러로 인식해야 합니다. 아래 설정 없이는 `OnDeepLink` 콜백이 호출되지 않습니다 (디퍼드 매칭만 동작).
+For the ViaLink SDK to receive deep links, the OS must recognize your app as the handler for the URL. Without the setup below, the `OnDeepLink` callback is not invoked (only deferred matching works).
 
 ### Android — `AndroidManifest.xml` intent-filter
 
-`Edit > Project Settings > Player > Android > Publishing Settings` 에서 **Custom Main Manifest** 를 체크하면 `Assets/Plugins/Android/AndroidManifest.xml` 에 Unity 기본 manifest 가 복사됩니다. **그 안의 `UnityPlayerActivity` 에 ViaLink intent-filter 만 추가하고, 다른 속성(`launchMode`, `configChanges`, `MAIN/LAUNCHER` intent-filter)은 절대 지우지 마세요.**
+When you enable **Custom Main Manifest** under `Edit > Project Settings > Player > Android > Publishing Settings`, Unity's default manifest is copied to `Assets/Plugins/Android/AndroidManifest.xml`. **Add only the ViaLink intent-filter to its `UnityPlayerActivity`, and never remove the other attributes (`launchMode`, `configChanges`, the `MAIN/LAUNCHER` intent-filter).**
 
-> ⚠️ `launchMode="singleTask"` 가 빠지면 딥링크 진입 시 OS 가 Activity 새 인스턴스를 만들어 게임 상태가 초기화됩니다.
-> `MAIN/LAUNCHER` intent-filter 가 빠지면 앱 아이콘에서 실행이 안 됩니다.
+> ⚠️ If `launchMode="singleTask"` is missing, the OS creates a new Activity instance on deep link entry and the game state is reset.
+> If the `MAIN/LAUNCHER` intent-filter is missing, the app won't launch from its icon.
 
-전체 형태는 다음과 같아야 합니다:
+The full form should look like this:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -138,13 +140,13 @@ ViaLink SDK 가 딥링크를 수신하려면 OS 가 앱을 해당 URL 의 핸들
             android:launchMode="singleTask"
             android:exported="true">
 
-            <!-- 앱 아이콘 실행 (절대 지우지 말 것) -->
+            <!-- App icon launch (never remove) -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- ViaLink App Link (https) — 권장 -->
+            <!-- ViaLink App Link (https) — recommended -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -152,10 +154,10 @@ ViaLink SDK 가 딥링크를 수신하려면 OS 가 앱을 해당 URL 의 핸들
                 <data
                     android:scheme="https"
                     android:host="vialink.app"
-                    android:pathPrefix="/{your-slug}/" /> <!-- ViaLink 대시보드에서 등록한 slug -->
+                    android:pathPrefix="/{your-slug}/" /> <!-- the slug registered in the ViaLink dashboard -->
             </intent-filter>
 
-            <!-- ViaLink 커스텀 URL Scheme (선택) -->
+            <!-- ViaLink custom URL Scheme (optional) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -167,11 +169,11 @@ ViaLink SDK 가 딥링크를 수신하려면 OS 가 앱을 해당 URL 의 핸들
 </manifest>
 ```
 
-> 별도로 Android 네이티브 코드(`onCreate`/`onNewIntent`) 를 작성할 필요는 없습니다. Unity 가 OS Intent 를 자동으로 `Application.deepLinkActivated` 이벤트로 변환해 SDK 가 받습니다.
+> You do not need to write any separate Android native code (`onCreate`/`onNewIntent`). Unity automatically converts the OS Intent into an `Application.deepLinkActivated` event that the SDK receives.
 
 ### iOS — Associated Domains + URL Scheme
 
-Unity 빌드 후 Xcode 프로젝트에 추가 설정이 필요합니다. **PostProcessBuild 스크립트로 자동화**하는 것을 권장합니다.
+Additional setup is required in the Xcode project after the Unity build. **Automating it with a PostProcessBuild script is recommended.**
 
 `Assets/Editor/ViaLinkiOSPostProcess.cs`:
 
@@ -200,7 +202,7 @@ public static class ViaLinkiOSPostProcess
         caps.AddAssociatedDomains(new[] { "applinks:vialink.app" });
         caps.WriteToFile();
 
-        // 2) URL Scheme (선택)
+        // 2) URL Scheme (optional)
         string plistPath = Path.Combine(path, "Info.plist");
         var plist = new PlistDocument();
         plist.ReadFromFile(plistPath);
@@ -215,21 +217,21 @@ public static class ViaLinkiOSPostProcess
 #endif
 ```
 
-수동으로 설정하려면: Xcode > Target > Signing & Capabilities > `+ Capability` > **Associated Domains** > `applinks:vialink.app` 추가.
+To set it up manually: Xcode > Target > Signing & Capabilities > `+ Capability` > **Associated Domains** > add `applinks:vialink.app`.
 
-> 자세한 내용(Android Gradle 설정, AASA 파일, 디버깅 체크리스트 등)은 [Unity SDK 가이드 §8](https://docs.vialink.app/sdk/unity-sdk-guide) 를 참고하세요.
+> For details (Android Gradle setup, AASA file, debugging checklist, etc.), see [Unity SDK Guide §8](https://docs.vialink.app/sdk/unity-sdk-guide).
 
-## 공개 클래스
+## Public classes
 
-| 클래스 | 역할 |
+| Class | Role |
 |--------|------|
-| `ViaLinkSDK` | 메인 싱글턴 (`Instance`, `Initialize`, `OnDeepLink`, Pull API, `TrackEvent`, `CreateLink`, `PaymentInitiated`) |
-| `DeepLinkData` | 딥링크 데이터 (`Path`, `Params`, `ShortCode`, `LinkId`) |
-| `DeferredError` | 디퍼드 매칭 실패 모델 (`Code`, `Message`, `Retryable`) |
-| `DeviceInfo` | 디바이스 정보 모델 (서버 전송용) |
-| `EventPayload` | 이벤트 페이로드 모델 |
-| `PaymentInitiatedArgs` / `PaymentInitiatedResult` | 결제 추적 입출력 |
+| `ViaLinkSDK` | Main singleton (`Instance`, `Initialize`, `OnDeepLink`, Pull API, `TrackEvent`, `CreateLink`, `PaymentInitiated`) |
+| `DeepLinkData` | Deep link data (`Path`, `Params`, `ShortCode`, `LinkId`) |
+| `DeferredError` | Deferred match failure model (`Code`, `Message`, `Retryable`) |
+| `DeviceInfo` | Device info model (for server transmission) |
+| `EventPayload` | Event payload model |
+| `PaymentInitiatedArgs` / `PaymentInitiatedResult` | Payment tracking input/output |
 
-## 문서
+## Documentation
 
-- [SDK 가이드](https://docs.vialink.app)
+- [SDK Guide](https://docs.vialink.app)
