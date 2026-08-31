@@ -1,9 +1,22 @@
 # ViaLink Unity SDK
 
+[![ViaLink — Deep links for 6 platforms. Start free.](docs/banner-en.png)](https://vialink.app)
+
 **English** | [한국어](README.ko.md)
 
 Unity SDK for the ViaLink deep link infrastructure service.
 Distributed as a precompiled DLL (`Runtime/Plugins/ViaLinkSDK.dll`, netstandard2.1).
+
+A single game build handles deep links on both Android and iOS. Players who tap an
+invite, win-back, or campaign link and then install land on the right screen at first
+launch (deferred deep linking), and in-game events and payments flow through the same
+attribution pipeline.
+
+Unlike most deep link and attribution tools, which require a sales call and an annual
+contract, **ViaLink is free to start.** No credit card — all six platform SDKs are
+available the moment you sign up.
+
+**→ [vialink.app](https://vialink.app)**
 
 ## Installation
 

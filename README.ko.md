@@ -1,9 +1,20 @@
 # ViaLink Unity SDK
 
+[![ViaLink — 6개 플랫폼 딥링크를 무료로 시작하세요](docs/banner-ko.png)](https://vialink.app)
+
 [English](README.md) | **한국어**
 
 ViaLink 딥링크 인프라 서비스를 위한 Unity SDK입니다.
 사전 컴파일된 DLL(`Runtime/Plugins/ViaLinkSDK.dll`, netstandard2.1)로 배포됩니다.
+
+게임 빌드 하나로 Android · iOS 딥링크를 처리합니다. 초대 · 복귀 · 캠페인 링크를 누르고
+설치한 유저를 첫 실행에서 정확한 화면으로 보내고(디퍼드 딥링킹), 인게임 이벤트와 결제까지
+하나의 파이프라인에서 어트리뷰션으로 연결합니다.
+
+많은 딥링크 · 어트리뷰션 도구가 영업 문의와 연간 계약을 요구하는 것과 달리
+**ViaLink는 무료로 시작합니다.** 카드 등록 없이, 가입 즉시 6개 플랫폼 SDK를 모두 쓸 수 있습니다.
+
+**→ [vialink.app](https://vialink.app)**
 
 ## 설치
 
