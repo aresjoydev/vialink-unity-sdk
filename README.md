@@ -232,7 +232,7 @@ public static class ViaLinkiOSPostProcess
 
 To set it up manually: Xcode > Target > Signing & Capabilities > `+ Capability` > **Associated Domains** > add `applinks:vialink.app`.
 
-> For details (Android Gradle setup, AASA file, debugging checklist, etc.), see [Unity SDK Guide §8](https://docs.vialink.app/sdk/unity-sdk-guide).
+> For details (Android Gradle setup, AASA file, debugging checklist, etc.), see [Unity SDK Guide §8](https://docs.vialink.app/#sdk-unity-deeplink).
 
 ## Public classes
 
@@ -247,4 +247,4 @@ To set it up manually: Xcode > Target > Signing & Capabilities > `+ Capability` 
 
 ## Documentation
 
-- [SDK Guide](https://docs.vialink.app)
+- [SDK Guide](https://docs.vialink.app/#sdk-unity-install)

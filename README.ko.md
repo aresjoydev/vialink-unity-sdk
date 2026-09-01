@@ -230,7 +230,7 @@ public static class ViaLinkiOSPostProcess
 
 수동으로 설정하려면: Xcode > Target > Signing & Capabilities > `+ Capability` > **Associated Domains** > `applinks:vialink.app` 추가.
 
-> 자세한 내용(Android Gradle 설정, AASA 파일, 디버깅 체크리스트 등)은 [Unity SDK 가이드 §8](https://docs.vialink.app/sdk/unity-sdk-guide) 를 참고하세요.
+> 자세한 내용(Android Gradle 설정, AASA 파일, 디버깅 체크리스트 등)은 [Unity SDK 가이드 §8](https://docs.vialink.app/#sdk-unity-deeplink) 를 참고하세요.
 
 ## 공개 클래스
 
@@ -245,4 +245,4 @@ public static class ViaLinkiOSPostProcess
 
 ## 문서
 
-- [SDK 가이드](https://docs.vialink.app)
+- [SDK 가이드](https://docs.vialink.app/#sdk-unity-install)
